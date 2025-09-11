@@ -1,0 +1,585 @@
+---
+title: "R Code for Processing CellProfiler Data on 2D Stiffness Gradient"
+subtitle: "Data for Asthma Manuscript: Dysregulated stiffness mechanosensation of airway smooth muscle cells in asthma"
+author: "Yong Hwee Tan & Sebastian Amos, 2024"
+output-file: "Render-for-Asthma Manuscript 2025.pdf"
+execute:
+  eval: false
+format:
+  pdf:
+    toc: true
+    toc-title: Contents
+    number-sections: true
+    colorlinks: true
+    keep-tex: true
+    include-in-header: 
+       text: |
+         \usepackage{fvextra}
+         \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+         \DefineVerbatimEnvironment{OutputCode}{Verbatim}{breaklines,commandchars=\\\{\}}
+editor_options: 
+  chunk_output_type: inline
+---
+
+\newpage
+
+
+
+# Introduction
+
+This document is a render (PDF) of the R Quarto document used to process and manage all CellProfiler(TM) generated data for the Asthma manuscript; 
+
+Asthma: Dysregulated stiffness mechanosensation of airway smooth muscle cells in asthma
+
+# Setup, Data Directory, Preprocessing 
+
+## Packages
+
+Check packages and install before loading if not present.
+
+```{r setup, include=FALSE}
+install.packages("reshape2")
+# Load required libraries
+library(tidyverse, warn.conflicts=F, quietly=T)
+library(readxl, warn.conflicts=F, quietly=T)
+library(ggpubr, warn.conflicts=F, quietly=T)
+library(plyr, warn.conflicts=F, quietly=T)
+library(tidyr, warn.conflicts=F, quietly=T)
+library(ggpmisc, warn.conflicts=F, quietly=T)
+library(RColorBrewer, warn.conflicts = F, quietly = T)
+library(ggsci, warn.conflicts = F, quietly = T)
+library(performance, warn.conflict = F, quietly = T)
+library(purrr, warn.conflict = F, quietly = T)
+library(stringr, warn.conflict = F, quietly = T)
+library(dplyr, warn.conflict = F, quietly = T)
+library(rstatix, warn.conflict = F, quietly = T)
+library(ggplot2, warn.conflict = F, quietly = T)
+library(knitr, warn.conflict = F, quietly = T)
+library(ggpmisc, warn.conflict = F, quietly = T)
+library(forcats,  warn.conflict = F, quietly = T)
+
+```
+
+## Data  Directory
+
+Define directory for all files.
+
+```{r Directory}
+
+outputDir <- "outputs"
+dir <- getwd()
+```
+
+## Preprocessing 
+
+Define all preprocessing functions to be repeated throughout the script
+
+```{r}
+concatenate_cellprofiler_rounds <- function(directory, pattern, file_name, grouping, outputDir){
+  setwd({{directory}})
+  fileList <- list.files(pattern = {{pattern}}, recursive = TRUE)
+  df <- data.frame()
+  for (file in fileList){
+    if(nrow(df) == 0){
+      df <- read_csv(file)
+    }
+    else {
+      tempdf <- read_csv(file)
+      df <- rbind(df, tempdf)
+      rm(tempdf)
+    }
+  }
+  df$index <- 1:nrow(df)
+  df$type <- {{grouping}}
+  df$inhibition <- ifelse(str_detect(type, "I_"), "Inhibited", "Control")
+  df <- janitor::clean_names(df)
+  name <- paste({{pattern}}, "Final_", sep = "_")
+  filename <- paste0(name, {{grouping}},".csv")
+  
+  setwd(dir)
+  # For Apple machines, change sep = "\\", to sep = "/" in the write_csv() function
+  write_csv(df, paste({{outputDir}}, filename, sep = "/"), append = FALSE )
+}
+```
+
+# Data Import
+
+Data for asthma manuscript are defined in the following 4 groups, in the 4 chunks of data importation below. Each protein sets, A & B, are now grouped together with control and inhibited (with Y27632) data:
+
+Set A: Channel1 - aSMA, Channel2 - YAP. Set B: Channel3 - smMHC, Channel4 - LaminA
+
+AA - control asthma, BA - control asthma, IAA - inhibited asthma, IBA - inhibited asthma
+
+## The Unique identifier chunk
+These labels allows us to merge the dataframes from control and inhibited data. 
+
+```{r}
+addInhibition <- function(df){
+  df <- df %>% 
+    mutate(inhibition = ifelse(str_detect(type, "I_"), "Inhibited", "Control"))
+}
+
+```
+
+The following 6 chunks are for Set A and Set B, of the data.
+
+## Data Chunks for All 4 Groups
+Set A Control Asthma-files coded - AA
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, results='hide'}
+
+aaFolder <- "data/Study2-datafiles-AA"
+
+type <- "Asthma_A"
+
+
+cytopattern <- "Cytoplasm"
+name <- "Cyto_Master_"
+cytodfAsthma_A <- concatenate_cellprofiler_rounds(aaFolder, cytopattern, name, type, outputDir)
+
+cellpattern <- "Cell"
+cname<- "Cell_Master_"
+celldfAsthma_A <- concatenate_cellprofiler_rounds(aaFolder, cellpattern, cname, type, outputDir)
+
+nucpattern <- "FilteredNuclei"
+nname <- "Nuclei_Master_"
+nucdfAsthma_A <- concatenate_cellprofiler_rounds(aaFolder, nucpattern, nname, type, outputDir)
+
+```
+
+Set A Control Asthma-files coded - IAA
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, results='hide'}
+
+aaiFolder <- "data/Study2-datafiles-InhibitedAA"
+type <- "I_Asthma_A"
+
+
+cytopattern <- "Cytoplasm"
+name <- "Cyto_Master_"
+cytodfI_Asthma_A <- concatenate_cellprofiler_rounds(aaiFolder, cytopattern, name, type, outputDir)
+
+cellpattern <- "Cell"
+cname <- "Cell_Master_"
+celldfI_Asthma_A <- concatenate_cellprofiler_rounds(aaiFolder, cellpattern, cname, type, outputDir)
+
+nucpattern <- "FilteredNuclei"
+nname <- "Nuclei_Master_"
+nucdfI_Asthma_A <- concatenate_cellprofiler_rounds(aaiFolder, nucpattern, nname, type, outputDir)
+
+```
+
+Set B Control Asthma-files coded - BA
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, results='hide'}
+
+folders <- "/Users/JoeTan/Desktop/GitHub/ASM-Analysis/data/Study2-datafiles-BA"
+
+baFolder <- "data/Study2-datafiles-BA"
+
+type <- "Asthma_B"
+
+
+cytopattern <- "Cytoplasm"
+name <- "Cyto_Master_"
+cytodfAsthma_B <- concatenate_cellprofiler_rounds(baFolder, cytopattern, name, type, outputDir)
+
+cellpattern <- "Cell"
+cname <- "Cell_Master_"
+celldfAsthma_B <- concatenate_cellprofiler_rounds(baFolder, cellpattern, cname, type, outputDir)
+
+nucpattern <- "FilteredNuclei"
+nname <- "Nuclei_Master_"
+nucdfAsthma_B <- concatenate_cellprofiler_rounds(baFolder, nucpattern, nname, type, outputDir)
+
+```
+
+Set B Inhibited Asthma-files coded - IBA
+ 
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, results='hide'}
+
+
+baiFolder <- "data/Study2-datafiles-InhibitedBA"
+
+type <- "I_Asthma_B"
+
+
+cytopattern <- "Cytoplasm"
+name <- "Cyto_Master_"
+cytodfI_Asthma_B <- concatenate_cellprofiler_rounds(baiFolder, cytopattern, name, type, outputDir)
+
+cellpattern <- "Cell"
+cname <- "Cell_Master_"
+celldfI_Asthma_B <- concatenate_cellprofiler_rounds(baiFolder, cellpattern, cname, type, outputDir)
+
+nucpattern <- "FilteredNuclei"
+nname <- "Nuclei_Master_"
+nucdfI_Asthma_B <- concatenate_cellprofiler_rounds(baiFolder, nucpattern, nname, type, outputDir)
+
+```
+
+# Combining Disease States
+
+Creating a merged df which includes all disease requires an indexing system. Dfs are imported with index vals from 1:n for cell, cyto, nuc. This means there are repeats of 1:n. We needed make index values unique - chose to append disease state to index. The following groups from Set A includes; A_A, I_A_A, are to be identified and concatenated, stacked in a df. The following groups from Set B includes; B_A, I_B_A, are to be identified and concatenated, stacked in a df. 
+
+## Concatenated Set A
+
+Here we merge disease states (asthma, inhibited asthma) into a concatenated df for each type of df, cell, cytoplasm (cyto) or nuclei (nuc).
+
+```{r}
+# reassign index vals based on disease type
+
+updateIndex <- function(data, string){
+  data <- data %>% 
+    mutate(index = paste(index, string, sep = "_"))
+}
+
+# Control ASTHMA
+A_asthmaString <- "A_A"
+A_asthmaList <- list(celldfAsthma_A, cytodfAsthma_A, nucdfAsthma_A)
+A_asthmaIndexed <- lapply(A_asthmaList, function(df) updateIndex(df, string = A_asthmaString))
+
+## reassign
+celldfAsthma_A <- A_asthmaIndexed[[1]]
+cytodfAsthma_A <- A_asthmaIndexed[[2]]
+nucdfAsthma_A <- A_asthmaIndexed[[3]]
+
+#Inhibited ASTHMA
+I_A_asthmaString <- "I_A_A"
+I_A_asthmaList <- list(celldfI_Asthma_A, cytodfI_Asthma_A, nucdfI_Asthma_A)
+I_A_asthmaIndexed <- lapply(I_A_asthmaList, function(df) updateIndex(df, string = I_A_asthmaString))
+
+## reassign
+celldfI_Asthma_A <- I_A_asthmaIndexed[[1]]
+cytodfI_Asthma_A <- I_A_asthmaIndexed[[2]]
+nucdfI_Asthma_A <- I_A_asthmaIndexed[[3]]
+
+cell_A_df <- rbind(celldfAsthma_A, celldfI_Asthma_A)
+
+cyto_A_df <- rbind(cytodfAsthma_A, cytodfI_Asthma_A)
+
+nuc_A_df <- rbind(nucdfAsthma_A, nucdfI_Asthma_A)
+
+write.csv(cell_A_df, file = "outputs/cell_A_df.csv")
+
+write.csv(cyto_A_df, file = "outputs/cyto_A_df.csv")
+
+write.csv(nuc_A_df, file = "outputs/nuc_A_df.csv")
+
+```
+
+## Concatenated Set B
+
+Here we merge disease states (asthma, inhibited asthma) into a concatenated df for each type of df, cell, cytoplasm (cyto) or nuclei (nuc).
+
+```{r}
+# reassign index vals based on disease type
+
+updateIndex <- function(data, string){
+  data <- data %>% 
+    mutate(index = paste(index, string, sep = "_"))
+}
+
+# Control ASTHMA
+B_asthmaString <- "B_A"
+B_asthmaList <- list(celldfAsthma_B, cytodfAsthma_B, nucdfAsthma_B)
+B_asthmaIndexed <- lapply(B_asthmaList, function(df) updateIndex(df, string = B_asthmaString))
+
+## reassign
+celldfAsthma_B <- B_asthmaIndexed[[1]]
+cytodfAsthma_B <- B_asthmaIndexed[[2]]
+nucdfAsthma_B <- B_asthmaIndexed[[3]]
+
+# Inhibited ASTHMA
+I_B_asthmaString <- "I_B_A"
+I_B_asthmaList <- list(celldfI_Asthma_B, cytodfI_Asthma_B, nucdfI_Asthma_B)
+I_B_asthmaIndexed <- lapply(I_B_asthmaList, function(df) updateIndex(df, string = I_B_asthmaString))
+
+## reassign
+celldfI_Asthma_B <- I_B_asthmaIndexed[[1]]
+cytodfI_Asthma_B <- I_B_asthmaIndexed[[2]]
+nucdfI_Asthma_B <- I_B_asthmaIndexed[[3]]
+
+cell_B_df <- rbind(celldfAsthma_B, celldfI_Asthma_B)
+
+cyto_B_df <- rbind( cytodfAsthma_B, cytodfI_Asthma_B)
+
+nuc_B_df <- rbind( nucdfAsthma_B, nucdfI_Asthma_B)
+
+write.csv(cell_B_df, file = "outputs/cell_B_df.csv")
+
+write.csv(cyto_B_df, file = "outputs/cyto_B_df.csv")
+
+write.csv(nuc_B_df, file = "outputs/nuc_B_df.csv")
+
+```
+
+# Modifying Each Data Frame Before Combination 
+
+In the following section, we create new columns and modify column names for both Set A and B, 
+
+```{r echo=TRUE, warning=FALSE, paged.print=FALSE, results='hide'}
+
+# CYTOPLASM
+cyto_A_df <- cyto_A_df %>% 
+  mutate(aSMA_cyto = intensity_integrated_intensity_channel1) %>%
+  mutate(YAP_cyto = intensity_integrated_intensity_channel2) %>%
+  mutate(aSMA_cyto_rel = aSMA_cyto / area_shape_area, .after=aSMA_cyto) %>%
+  mutate(YAP_cyto_rel = YAP_cyto / area_shape_area, .after=YAP_cyto) 
+
+#Set B holds data for smMHC-Channel3, LaminA-Channel4.*only channel3 requires changes in cyto_Bdf.
+cyto_B_df <- cyto_B_df %>%
+  mutate(smMHC_cyto = intensity_integrated_intensity_channel3) %>%
+  mutate(smMHC_cyto_rel = smMHC_cyto / area_shape_area, .after=smMHC_cyto)
+  
+#CELLS
+cell_A_df <- cell_A_df %>% # update the celldf with the following:
+  mutate(cell_aspect_ratio = area_shape_major_axis_length / area_shape_minor_axis_length, .after=area_shape_major_axis_length) %>% 
+  mutate(aSMA_cell = intensity_integrated_intensity_channel1) %>% 
+  mutate(aSMA_cell_rel = aSMA_cell / area_shape_area, .after=aSMA_cell) %>% 
+  mutate(cell_form_factor = area_shape_form_factor) %>% 
+  mutate(cell_orientation = area_shape_orientation) 
+
+cell_B_df <- cell_B_df %>% # update the celldf with the following. 
+  mutate(cell_aspect_ratio = area_shape_major_axis_length / area_shape_minor_axis_length, .after=area_shape_major_axis_length) %>% 
+  mutate(smMHC_cell = intensity_integrated_intensity_channel3) %>% 
+  mutate(smMHC_cell_rel = smMHC_cell / area_shape_area, .after=smMHC_cell) %>%  
+  mutate(cell_form_factor = area_shape_form_factor) %>% 
+  mutate(cell_orientation = area_shape_orientation) 
+
+#NUCLEI
+nuc_A_df <- nuc_A_df %>% 
+  mutate(YAP_nuc = intensity_integrated_intensity_channel2) %>%
+  mutate(YAP_nuc_rel = YAP_nuc / area_shape_area, .after=YAP_nuc) %>%
+  mutate(nuc_aspect_ratio =  area_shape_major_axis_length / area_shape_minor_axis_length, .after=area_shape_major_axis_length) %>%
+  mutate(aSMA_nuc = intensity_integrated_intensity_channel1) %>%
+  mutate(aSMA_nuc_rel = aSMA_nuc / area_shape_area, .after=aSMA_nuc) %>%
+  mutate(nuc_form_factor = area_shape_form_factor) %>%
+  mutate(nuc_aspect_ratio = area_shape_major_axis_length / area_shape_minor_axis_length, .after=area_shape_major_axis_length) %>% 
+  mutate(nuc_orientation = area_shape_orientation) 
+
+nuc_B_df <- nuc_B_df %>% 
+  mutate(LaminA = intensity_integrated_intensity_channel4) %>%
+  mutate(LaminA_rel = LaminA / area_shape_area, .after=LaminA) %>%
+  mutate(smMHC_nuc =  intensity_integrated_intensity_channel3) %>%
+  mutate(smMHC_nuc_rel = smMHC_nuc / area_shape_area, .after=smMHC_nuc) %>%
+  mutate(nuc_form_factor = area_shape_form_factor) %>%
+  mutate(nuc_aspect_ratio = area_shape_major_axis_length / area_shape_minor_axis_length, .after=area_shape_major_axis_length) %>% 
+  mutate(nuc_orientation = area_shape_orientation) 
+
+```
+
+## Merge Data Frames
+
+We create a unique index column in the concatenation function so that we have a common ID value between data frames we want to join together. First, the correct data (with every column having a unique name) will be selected before merging - note: the common variable between data frames, index, is selected in each case. ImageNumber is also selected in the cell df so it can be decoded into stiffness next. In this chunk, the mutate() function is used in place of the rename() function - the outcome is the same.
+
+```{r}
+# CYTO 
+cyto_A <- cyto_A_df %>%
+  mutate(cyto_area = area_shape_area, cyto_number = object_number) %>%
+  select(cyto_area, cyto_number, aSMA_cyto, aSMA_cyto_rel, YAP_cyto, YAP_cyto_rel, index, type, inhibition)
+
+cyto_B <- cyto_B_df %>%
+  mutate(cyto_area = area_shape_area, cyto_number = object_number) %>%
+  select(cyto_area, cyto_number, smMHC_cyto, smMHC_cyto_rel, index, type, inhibition)
+
+# CELLS
+cell_A <- cell_A_df %>% 
+  mutate(cell_area = area_shape_area, cell_number = object_number) %>%
+  select(cell_area , cell_number, cell_aspect_ratio, cell_form_factor, cell_orientation, aSMA_cell, aSMA_cell_rel, index, image_number, type, inhibition) 
+
+cell_B <- cell_B_df %>%
+  mutate(cell_area = area_shape_area, cell_number = object_number) %>%
+  select(cell_area , cell_number, cell_aspect_ratio, cell_form_factor, cell_orientation, smMHC_cell, smMHC_cell_rel, index, image_number, type, inhibition) 
+  
+# NUCLEI
+nuc_A <- nuc_A_df %>% 
+  mutate(nuc_area = area_shape_area, nuc_number = object_number) %>% 
+  select(nuc_area, nuc_number, nuc_aspect_ratio, nuc_form_factor, nuc_orientation, aSMA_nuc, aSMA_nuc_rel, YAP_nuc, YAP_nuc_rel, index, type, inhibition) 
+
+nuc_B <- nuc_B_df %>%
+  mutate(nuc_area = area_shape_area, nuc_number = object_number) %>% 
+  select(nuc_area, nuc_number, nuc_aspect_ratio, nuc_form_factor, nuc_orientation,smMHC_nuc, smMHC_nuc_rel, LaminA, LaminA_rel, index, type, inhibition) 
+ 
+
+# Bind the various data frames together, combinig only the relevant information.
+#For Set A
+dfDistinctCellA <- cell_A %>% 
+  left_join(nuc_A, by = "index" , "type")
+
+dfA <- dfDistinctCellA %>% 
+  left_join(cyto_A, by = "index", "type")
+
+#For Set B
+dfDistinctCellB <- cell_B %>% 
+  left_join(nuc_B, by = "index", "type")
+
+dfB <- dfDistinctCellB %>% 
+  left_join(cyto_B, by = "index", "type")
+
+```
+
+# Modifying the Final Data Frame-Protein Markers
+Now we have a combined data frame for Set A "dfA", and Set B "dfB" that includes Control and Inhibition data.
+
+Before we do any analysis, we decode our stiffness values (which are currently 1:8) into the actual stiffness measurements. This will allow us to factorise or group by stiffness and plot with accurate values instead of placeholders. Then, we filter the data based on some conditions (i.e. object area).
+
+The following categorising chunks for Set A and B provide the df's for the four protein markers in our studies; aSMA, YAP, Lamin-A and sm-MHC. 
+
+## Categorising Set A according to stiffness 
+First, we modify the df by stiffness. Each stiffness range was imaged on four locations in a row. We then modify and rename each of the columns in anticipation for the categorizing we will apply in Graphpad Prism.
+
+```{r}
+# MODIFY THE FINAL SET A DATA FRAME - REDONE for BOTH CONTROLS AND INHIBITION
+dfA <- dfA %>% 
+   mutate(stiffness = case_when(image_number %in% c( 1 , 2 , 3 , 4 ) ~ 2.6,
+                               image_number %in% c( 5 , 6 , 7 , 8) ~ 5,
+                               image_number %in% c( 9 , 10 , 11 , 12 )  ~ 9,
+                               image_number %in% c( 13 , 14, 15 , 16 ) ~ 13.5,
+                               image_number %in% c( 17 , 18 , 19 , 20 )  ~ 18.5,
+                               image_number %in% c( 21 , 22 , 23 , 24 )  ~ 23,
+                               image_number %in% c( 25 , 26 , 27 , 28 ) ~ 27,
+                               image_number %in% c( 29 , 30 , 31 , 32 )  ~ 31))
+
+dfFacA <- dfA %>% 
+  mutate(stiffness = as.factor(stiffness), type = as.factor(type)) %>% 
+  mutate(nuc_cellsize_ratio = nuc_area/cell_area, .before=cell_area) %>%
+  mutate(YAP_nuccyto = YAP_nuc/YAP_cyto, .after=YAP_nuc) %>% 
+  mutate(YAP_nuccyto_rel = YAP_nuc_rel/YAP_cyto_rel, .after=YAP_nuc_rel) %>%
+  mutate(aSMA_nuccyto = aSMA_nuc/aSMA_cyto, .after=aSMA_nuc) %>%
+  mutate(aSMA_nuccyto_rel = aSMA_nuc_rel/aSMA_cyto_rel, .after=aSMA_nuc_rel) %>%
+  mutate(cell_areamicrons = cell_area*0.436464752, .after=cell_area) %>% # Application of conversion factor, according to single pixel area in microns squared (cellprofiler provides area quantified by total pixel number)
+  mutate(nuc_areamicrons = nuc_area*0.436464752, .after=nuc_area) %>%
+  mutate(cyto_areamicrons = cyto_area*0.436464752, .after=cyto_area) %>%
+  filter(nuc_cellsize_ratio != 1)  %>% # Filters out rows where nuc_cellsize_ratio equals 1
+  mutate(type = recode(type,
+                             "Asthma_A" = "AsthmaA"))
+  
+# Filter based on the type values
+dfAsthmaA <- dfFacA %>% filter(str_detect(type, "AsthmaA")) 
+dfInhibAsthmaA <- dfFacA %>% filter(str_detect(type, "I_Asthma_A")) 
+
+# Save each filtered data frame as a separate CSV file
+write.csv(dfAsthmaA, file = "outputs/dfAsthmaA.csv", row.names = FALSE)
+write.csv(dfInhibAsthmaA, file = "outputs/dfInhibAsthmaA.csv", row.names = FALSE)
+
+# Write a CSV for the full data frame.
+write.csv(dfFacA, file = "outputs/dfFacA.csv")
+
+```
+
+## Categorising Set B according to stiffness 
+
+First, we modify the df by stiffiness. Each stiffness range was imaged on four locations in a row. We then modify and rename each of the columns in anticipation for the categorizing we will apply in Graphpad Prism.
+
+```{r}
+# MODIFY THE FINAL SET B DATA FRAME - REDONE for BOTH CONTROLS AND INHIBITION
+dfB <- dfB %>% 
+   mutate(stiffness = case_when(image_number %in% c( 1 , 2 , 3 , 4 ) ~ 2.6,
+                               image_number %in% c( 5 , 6 , 7 , 8) ~ 5,
+                               image_number %in% c( 9 , 10 , 11 , 12 )  ~ 9,
+                               image_number %in% c( 13 , 14, 15 , 16 ) ~ 13.5,
+                               image_number %in% c( 17 , 18 , 19 , 20 )  ~ 18.5,
+                               image_number %in% c( 21 , 22 , 23 , 24 )  ~ 23,
+                               image_number %in% c( 25 , 26 , 27 , 28 ) ~ 27,
+                               image_number %in% c( 29 , 30 , 31 , 32 )  ~ 31))
+
+dfFacB <- dfB %>% 
+  mutate(stiffness = as.factor(stiffness), type = as.factor(type)) %>% 
+  mutate(nuc_cellsize_ratio = nuc_area/cell_area, .before=cell_area) %>%
+  mutate(LaminA_rel_cell = LaminA/cell_area, .after=LaminA) %>%
+  mutate(smMHC_rel_cell = smMHC_cell/cell_area, .after=smMHC_cell) %>%
+  mutate(cell_areamicrons = cell_area*0.436464752, .after=cell_area) %>% # Application of conversion factor, according to single pixel area in microns squared (cellprofiler provides area quantified by total pixel number)
+  mutate(nuc_areamicrons = nuc_area*0.436464752, .after=nuc_area) %>%
+  mutate(cyto_areamicrons = cyto_area*0.436464752, .after=cyto_area) %>%
+  filter(nuc_cellsize_ratio != 1)  %>% # Filters out rows where nuc_cellsize_ratio equals 1
+  filter(smMHC_rel_cell != 1)  %>% # Filters out rows where nuc_cellsize_ratio equals 1
+  mutate(type = recode(type,
+                             "Asthma_B" = "AsthmaB"))
+# Now we filter based on the type values
+dfAsthmaB <- dfFacB %>% filter(str_detect(type, "AsthmaB"))
+dfInhibAsthmaB <- dfFacB %>% filter(str_detect(type, "I_Asthma_B"))
+
+# Save each filtered data frame as a separate CSV file
+write.csv(dfAsthmaB, file = "outputs/dfAsthmaB.csv", row.names = FALSE)
+write.csv(dfInhibAsthmaB, file = "outputs/dfInhibAsthmaB.csv", row.names = FALSE)
+
+# Write a CSV for the full data frame.
+write.csv(dfFacB, file = "outputs/dfFacB.csv")
+
+```
+
+# Modify Final Data Frame-Morphology Assessment
+In this section, we combine morphological data from both Set A and B.
+
+```{r}
+# Collect morphology columns into new dfs
+dfAMorpho <- dfA %>% 
+  select(index, image_number, cell_area, cell_number, cell_aspect_ratio, cell_form_factor, cell_orientation, nuc_area, nuc_number, nuc_aspect_ratio, nuc_form_factor,nuc_orientation,cyto_area, cyto_number, type, inhibition, stiffness)
+
+dfBMorpho <- dfB %>% 
+  select(index, image_number, cell_area, cell_number, cell_aspect_ratio, cell_form_factor, cell_orientation, nuc_area, nuc_number, nuc_aspect_ratio, nuc_form_factor, nuc_orientation, cyto_area, cyto_number, type, inhibition, stiffness)
+
+# Bind them together
+dfMorpho <- rbind(dfAMorpho, dfBMorpho)
+
+# Creating a new column, to allocate disease type as a merged group including both set A and B data
+
+write.csv(dfMorpho, file = "outputs/dfMorpho.csv")
+
+```
+
+## Combine Set A and B morphology 
+Here, we create a new column to allow combination and indexing of both Sets.
+
+```{r}
+# Creating a new colum in dfMorpho
+dfMorphomerge <- dfMorpho %>% 
+mutate(mergedtype = str_replace(type, "_[A-B]$", "_"))
+
+write.csv(dfMorphomerge, file = "outputs/dfMorphomerge.csv")
+
+```
+
+## Categorizing Data to Stiffness 
+We apply the segregation of dfMorphomerged, into dfFacMorphomerge.
+
+```{r}
+dfMorphomerge <- dfMorphomerge %>% 
+   mutate(stiffness = case_when(image_number %in% c( 1 , 2 , 3 , 4 ) ~ 2.6,
+                               image_number %in% c( 5 , 6 , 7 , 8) ~ 5,
+                               image_number %in% c( 9 , 10 , 11 , 12 )  ~ 9,
+                               image_number %in% c( 13 , 14, 15 , 16 ) ~ 13.5,
+                               image_number %in% c( 17 , 18 , 19 , 20 )  ~ 18.5,
+                               image_number %in% c( 21 , 22 , 23 , 24 )  ~ 23,
+                               image_number %in% c( 25 , 26 , 27 , 28 ) ~ 27,
+                               image_number %in% c( 29 , 30 , 31 , 32 )  ~ 31))
+
+  dfFacMorphomerge <- dfMorphomerge %>% 
+  mutate(stiffness = as.factor(stiffness), type = as.factor(type)) %>% 
+  mutate(nuc_cellsize_ratio = nuc_area/cell_area, .before=cell_area) %>%
+  mutate(nuclearrelcell_area = nuc_area/cell_area, .after=cell_area) %>% 
+  mutate(cell_areamicrons = cell_area*0.436464752, .after=cell_area) %>% # Application of conversion factor, according to single pixel area in microns squared (cellprofiler provides area quantified by total pixel number)
+  mutate(nuc_areamicrons = nuc_area*0.436464752, .after=nuc_area) %>%
+  mutate(cyto_areamicrons = cyto_area*0.436464752, .after=cyto_area) %>%
+  filter(nuc_cellsize_ratio != 1)  %>% # Filters out rows where nuc_cellsize_ratio equals 1
+  mutate(mergedtype = recode(mergedtype,
+                             "Asthma_" = "Asthma", "I_Asthma_" = "Inhibited Asthma"))
+
+# Write the entire dataset to a single CSV file
+write.csv(dfFacMorphomerge, file = "outputs/dfFacMorphomerge.csv", row.names = FALSE)
+
+df_AsthmaMerge <- dfFacMorphomerge %>% filter(str_detect(mergedtype, "Asthma"))
+df_InhibitedAsthmaMerge <- dfFacMorphomerge %>% filter(str_detect(mergedtype, "Inhibited Asthma"))
+
+# Split the data based on 'mergedtype' and save each subset into a separate CSV
+# Filter for Asthma
+df_AsthmaMerge <- dfFacMorphomerge %>% filter(mergedtype == "Asthma")
+write.csv(df_AsthmaMerge, file = "outputs/dfFacMorphomerge_Asthma.csv", row.names = FALSE)
+
+df_InhibitedAsthmaMerge <- dfFacMorphomerge %>% filter(mergedtype == "Inhibited Asthma")
+write.csv(df_InhibitedAsthmaMerge, file = "outputs/dfFacMorphomerge_InhibitedAsthma.csv", row.names = FALSE)
+
+```
+
+This concludes the markdown. All data processed can now be plotted using GraphPad Prism. 

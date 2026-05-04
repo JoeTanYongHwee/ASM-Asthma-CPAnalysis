@@ -8,7 +8,7 @@ author: "Yong Hwee Tan & Sebastian Amos, 2024"
 
 ** Something about the paper
 
-This document is a render (PDF) of the R Quarto document used to process and manage all CellProfiler(TM) generated data for the Asthma manuscript; 
+This R code is used to process and manage all CellProfiler(TM) generated data for the Asthma manuscript; 
 
 Asthma: Dysregulated stiffness mechanosensation of airway smooth muscle cells in asthma
 
@@ -19,7 +19,7 @@ Asthma: Dysregulated stiffness mechanosensation of airway smooth muscle cells in
 Check packages and install before loading if not present.
 
 ```{r setup, include=FALSE}
-packages <- c("tidyverse", "readxl", "ggpubr", "plyr", "tidyr", "ggpmisc", "RColorBrewer", "ggsci", "performance", "purrr", "stringr", "dplyr", "rstatix", "ggplot2", "knitr", "ggpmisc", "forcats", "reshape2")
+packages <- c("tidyverse", "readxl", "ggpubr", "plyr", "ggpmisc", "RColorBrewer", "ggsci", "performance", "rstatix", "knitr", "ggpmisc", "reshape2")
 
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {

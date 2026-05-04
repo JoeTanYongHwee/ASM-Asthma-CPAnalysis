@@ -1,0 +1,2 @@
+This study investigates how asthmatic human airway smooth muscle cells (hASMC) sense and respond to physiologically relevant extracellular matrix (ECM) stiffness using a linear stiffness gradient hydrogel platform.
+Using data managed and processed from CellProfiler(TM), and subsequently graphed/analyzed in GraphPad Prism, we demonstrate that asthmatic hASMC exhibit uncoupled mechanotransduction, where stiffness-dependent morphological changes persist despite impaired nuclear signalling (YAP, Lamin-A), and show that ROCK inhibition (Y27632) partially restores this response.

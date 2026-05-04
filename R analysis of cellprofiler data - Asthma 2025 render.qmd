@@ -7,7 +7,7 @@ author: "Yong Hwee Tan & Sebastian Amos, 2024"
 # Introduction
 
 ** Supplementary information - streamlining data management 
-This R code is used to process and manage all CellProfiler(TM) generated data for the Asthma manuscript; 
+This R code is used to process and manage all CellProfiler(TM) generated data for the manuscript; 
 
 Asthma: Dysregulated stiffness mechanosensation of airway smooth muscle cells in asthma
 

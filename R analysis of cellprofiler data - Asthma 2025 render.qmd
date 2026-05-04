@@ -2,30 +2,11 @@
 title: "R Code for Processing CellProfiler Data on 2D Stiffness Gradient"
 subtitle: "Data for Asthma Manuscript: Dysregulated stiffness mechanosensation of airway smooth muscle cells in asthma"
 author: "Yong Hwee Tan & Sebastian Amos, 2024"
-output-file: "Render-for-Asthma Manuscript 2025.pdf"
-execute:
-  eval: false
-format:
-  pdf:
-    toc: true
-    toc-title: Contents
-    number-sections: true
-    colorlinks: true
-    keep-tex: true
-    include-in-header: 
-       text: |
-         \usepackage{fvextra}
-         \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
-         \DefineVerbatimEnvironment{OutputCode}{Verbatim}{breaklines,commandchars=\\\{\}}
-editor_options: 
-  chunk_output_type: inline
 ---
 
-\newpage
-
-
-
 # Introduction
+
+** Something about the paper
 
 This document is a render (PDF) of the R Quarto document used to process and manage all CellProfiler(TM) generated data for the Asthma manuscript; 
 
@@ -38,25 +19,15 @@ Asthma: Dysregulated stiffness mechanosensation of airway smooth muscle cells in
 Check packages and install before loading if not present.
 
 ```{r setup, include=FALSE}
-install.packages("reshape2")
-# Load required libraries
-library(tidyverse, warn.conflicts=F, quietly=T)
-library(readxl, warn.conflicts=F, quietly=T)
-library(ggpubr, warn.conflicts=F, quietly=T)
-library(plyr, warn.conflicts=F, quietly=T)
-library(tidyr, warn.conflicts=F, quietly=T)
-library(ggpmisc, warn.conflicts=F, quietly=T)
-library(RColorBrewer, warn.conflicts = F, quietly = T)
-library(ggsci, warn.conflicts = F, quietly = T)
-library(performance, warn.conflict = F, quietly = T)
-library(purrr, warn.conflict = F, quietly = T)
-library(stringr, warn.conflict = F, quietly = T)
-library(dplyr, warn.conflict = F, quietly = T)
-library(rstatix, warn.conflict = F, quietly = T)
-library(ggplot2, warn.conflict = F, quietly = T)
-library(knitr, warn.conflict = F, quietly = T)
-library(ggpmisc, warn.conflict = F, quietly = T)
-library(forcats,  warn.conflict = F, quietly = T)
+packages <- c("tidyverse", "readxl", "ggpubr", "plyr", "tidyr", "ggpmisc", "RColorBrewer", "ggsci", "performance", "purrr", "stringr", "dplyr", "rstatix", "ggplot2", "knitr", "ggpmisc", "forcats", "reshape2")
+
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Load packages
+invisible(lapply(packages, library, character.only = TRUE))
 
 ```
 
@@ -128,10 +99,9 @@ Set A Control Asthma-files coded - AA
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, results='hide'}
 
-aaFolder <- "data/Study2-datafiles-AA"
+aaFolder <- "path-to-csv"
 
 type <- "Asthma_A"
-
 
 cytopattern <- "Cytoplasm"
 name <- "Cyto_Master_"
@@ -153,7 +123,6 @@ Set A Control Asthma-files coded - IAA
 
 aaiFolder <- "data/Study2-datafiles-InhibitedAA"
 type <- "I_Asthma_A"
-
 
 cytopattern <- "Cytoplasm"
 name <- "Cyto_Master_"
@@ -178,7 +147,6 @@ folders <- "/Users/JoeTan/Desktop/GitHub/ASM-Analysis/data/Study2-datafiles-BA"
 baFolder <- "data/Study2-datafiles-BA"
 
 type <- "Asthma_B"
-
 
 cytopattern <- "Cytoplasm"
 name <- "Cyto_Master_"
@@ -581,5 +549,3 @@ df_InhibitedAsthmaMerge <- dfFacMorphomerge %>% filter(mergedtype == "Inhibited 
 write.csv(df_InhibitedAsthmaMerge, file = "outputs/dfFacMorphomerge_InhibitedAsthma.csv", row.names = FALSE)
 
 ```
-
-This concludes the markdown. All data processed can now be plotted using GraphPad Prism. 

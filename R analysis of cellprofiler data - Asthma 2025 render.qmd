@@ -6,8 +6,7 @@ author: "Yong Hwee Tan & Sebastian Amos, 2024"
 
 # Introduction
 
-** Something about the paper
-
+** Supplementary information - streamlining data management 
 This R code is used to process and manage all CellProfiler(TM) generated data for the Asthma manuscript; 
 
 Asthma: Dysregulated stiffness mechanosensation of airway smooth muscle cells in asthma
@@ -19,7 +18,7 @@ Asthma: Dysregulated stiffness mechanosensation of airway smooth muscle cells in
 Check packages and install before loading if not present.
 
 ```{r setup, include=FALSE}
-packages <- c("tidyverse", "readxl", "ggpubr", "plyr", "ggpmisc", "RColorBrewer", "ggsci", "performance", "rstatix", "knitr", "ggpmisc", "reshape2")
+packages <- c("tidyverse", "readxl", "plyr")
 
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
@@ -121,7 +120,7 @@ Set A Control Asthma-files coded - IAA
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, results='hide'}
 
-aaiFolder <- "data/Study2-datafiles-InhibitedAA"
+aaiFolder <- "path-to-csv"
 type <- "I_Asthma_A"
 
 cytopattern <- "Cytoplasm"
@@ -142,9 +141,9 @@ Set B Control Asthma-files coded - BA
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, results='hide'}
 
-folders <- "/Users/JoeTan/Desktop/GitHub/ASM-Analysis/data/Study2-datafiles-BA"
+folders <- "path-to-folder"
 
-baFolder <- "data/Study2-datafiles-BA"
+baFolder <- "path-to-csv"
 
 type <- "Asthma_B"
 
@@ -167,7 +166,7 @@ Set B Inhibited Asthma-files coded - IBA
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, results='hide'}
 
 
-baiFolder <- "data/Study2-datafiles-InhibitedBA"
+baiFolder <- "path-to-csv"
 
 type <- "I_Asthma_B"
 

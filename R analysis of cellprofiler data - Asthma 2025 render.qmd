@@ -18,7 +18,7 @@ Asthma: Dysregulated stiffness mechanosensation of airway smooth muscle cells in
 Check packages and install before loading if not present.
 
 ```{r setup, include=FALSE}
-packages <- c("tidyverse", "readxl", "plyr")
+packages <- c("tidyverse", "readxl")
 
 installed_packages <- packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
